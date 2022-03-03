@@ -1,5 +1,5 @@
 const express = require("express");
-const feedRoutes = require("../routes/feed");
+const feedRoutes = require("./routes/feed");
 
 const app = express();
 
