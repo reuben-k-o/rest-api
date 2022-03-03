@@ -1,0 +1,11 @@
+{
+  "name": "rest",
+  "version": "1.0.0",
+  "description": "Rest API",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Reuben Khaemba",
+  "license": "ISC"
+}
