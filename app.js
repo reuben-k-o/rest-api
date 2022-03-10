@@ -15,15 +15,15 @@ const fileStorage = multer.diskStorage({
     cb(null, "images");
   },
   filename: (req, file, cb) => {
-    cb(null, uuidv4());
+    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
   },
 });
 
-fileFilter = (req, file, cb) => {
+const fileFilter = (req, file, cb) => {
   if (
-    file.mimeType === "image/png" ||
-    file.mimeType === "image/jpeg" ||
-    file.mimeType === "image/jpg"
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg"
   ) {
     cb(null, true);
   } else {
@@ -32,7 +32,9 @@ fileFilter = (req, file, cb) => {
 };
 
 app.use(bodyParser.json());
-app.use(multer({ storage: fileStorage, fileFilter }).single("image"));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
 app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use((req, res, next) => {
