@@ -140,6 +140,11 @@ exports.updatePost = (req, res, next) => {
       if (imageUrl !== post.imageUrl) {
         clearImage(post.imageUrl);
       }
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error("Not authorized to update");
+        error.statusCode = 403;
+        throw error;
+      }
 
       post.title = title;
       post.content = content;
@@ -176,8 +181,20 @@ exports.deletePost = (req, res, next) => {
       }
 
       //Check Logged in user
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error("Not allowed to delete post");
+        error.statusCode = 403;
+        throw error;
+      }
       clearImage(post.imageUrl);
       return Post.findByIdAndRemove(postId);
+    })
+    .then(() => {
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      user.posts.pull(postId);
+      return user.save();
     })
     .then((result) => {
       console.log(result);
