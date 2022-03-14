@@ -6,32 +6,27 @@ const Post = require("../models/post");
 const User = require("../models/user");
 const errorFn = require("../util/error");
 
-exports.getPosts = (req, res, next) => {
+exports.getPosts = async (req, res, next) => {
   const currentPage = req.query.page || 1;
   const perPage = 2;
   let totalItems;
-  Post.find()
-    .countDocuments()
-    .then((count) => {
-      totalItems = count;
+  try {
+    totalItems = await Post.find().countDocuments();
+    const posts = await Post.find()
+      .skip((currentPage - 1) * perPage)
+      .limit(perPage);
 
-      return Post.find()
-        .skip((currentPage - 1) * perPage)
-        .limit(perPage);
-    })
-    .then((posts) => {
-      res.status(200).json({
-        message: "Posts successfully fetched from the database",
-        posts: posts,
-        totalItems,
-      });
-    })
-    .catch((err) => {
-      errorFn.errorHandler(err);
+    res.status(200).json({
+      message: "Posts successfully fetched from the database",
+      posts: posts,
+      totalItems,
     });
+  } catch (err) {
+    errorFn.errorHandler(err);
+  }
 };
 
-exports.createPost = (req, res, next) => {
+exports.createPost = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -54,27 +49,21 @@ exports.createPost = (req, res, next) => {
     imageUrl,
     creator: req.userId,
   });
-  post
-    .save()
-    .then((result) => {
-      console.log(result);
-      return User.findById(req.userId);
-    })
-    .then((user) => {
-      creator = user;
-      user.posts.push(post);
-      return user.save();
-    })
-    .then((result) => {
-      res.status(201).json({
-        message: "Post created successfully",
-        post: post,
-        creator: { _id: creator._id, name: creator.name },
-      });
-    })
-    .catch((err) => {
-      errorFn.errorHandler(err);
+  try {
+    const result = post.save();
+    console.log(result);
+    const user = await User.findById(req.userId);
+    creator = user;
+    user.posts.push(post);
+    const resSave = await user.save();
+    res.status(201).json({
+      message: "Post created successfully",
+      post: post,
+      creator: { _id: creator._id, name: creator.name },
     });
+  } catch (err) {
+    errorFn.errorHandler(err);
+  }
 };
 
 exports.getPost = (req, res, next) => {

@@ -11,7 +11,7 @@ router.post(
   "/post",
   isAuth,
   [
-    check("title").trim().isLength({ min: 7 }),
+    check("title").trim().isLength({ min: 5 }),
     check("content").trim().isLength({ min: 5 }),
   ],
 
