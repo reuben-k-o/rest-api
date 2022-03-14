@@ -4,6 +4,7 @@ const path = require("path");
 
 const Post = require("../models/post");
 const User = require("../models/user");
+const errorFn = require("../util/error");
 
 exports.getPosts = (req, res, next) => {
   const currentPage = req.query.page || 1;
@@ -26,10 +27,7 @@ exports.getPosts = (req, res, next) => {
       });
     })
     .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+      errorFn.errorHandler(err);
     });
 };
 
@@ -37,15 +35,11 @@ exports.createPost = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    const error = new Error("Validation failed, you entered invalid data!");
-    error.statusCode = 422;
-    throw error;
+    errorFn.errorCheck("Validation failed, you entered invalid data!", 422);
   }
 
   if (!req.file) {
-    const error = new Error("No Image provided");
-    error.statusCode = 422;
-    throw error;
+    errorFn.errorCheck("No Image provided", 422);
   }
 
   const imageUrl = req.file.path.replace("\\", "/");
@@ -79,10 +73,7 @@ exports.createPost = (req, res, next) => {
       });
     })
     .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+      errorFn.errorHandler(err);
     });
 };
 
@@ -93,19 +84,14 @@ exports.getPost = (req, res, next) => {
     .populate("creator")
     .then((post) => {
       if (!post) {
-        const error = new Error("No post found");
-        error.statusCode = 404;
-        throw error;
+        errorFn.errorCheck("No post found", 404);
       }
       res
         .status(200)
         .json({ message: "Post fetched successfully", post: post });
     })
     .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+      errorFn.errorHandler(err);
     });
 };
 
@@ -114,9 +100,7 @@ exports.updatePost = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    const error = new Error("Validation failed, you entered invalid data!");
-    error.statusCode = 422;
-    throw error;
+    errorFn.errorCheck("Validation failed, you entered invalid data!", 422);
   }
   const title = req.body.title;
   const content = req.body.content;
@@ -125,25 +109,19 @@ exports.updatePost = (req, res, next) => {
     imageUrl = req.file.path.replace("\\", "/");
   }
   if (!imageUrl) {
-    const error = new Error("No image picked");
-    error.statusCode = 422;
-    throw error;
+    errorFn.errorCheck("No image picked", 422);
   }
   Post.findById(postId)
     .then((post) => {
       if (!post) {
-        const error = new Error("No post found");
-        error.statusCode = 404;
-        throw error;
+        errorFn.errorCheck("No post found!", 404);
       }
 
       if (imageUrl !== post.imageUrl) {
         clearImage(post.imageUrl);
       }
       if (post.creator.toString() !== req.userId) {
-        const error = new Error("Not authorized to update");
-        error.statusCode = 403;
-        throw error;
+        errorFn.errorCheck("Not authorized to update", 403);
       }
 
       post.title = title;
@@ -158,10 +136,7 @@ exports.updatePost = (req, res, next) => {
       });
     })
     .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+      errorFn.errorHandler(err);
     });
 };
 
@@ -175,16 +150,12 @@ exports.deletePost = (req, res, next) => {
   Post.findById(postId)
     .then((post) => {
       if (!post) {
-        const error = new Error("No post found");
-        error.statusCode = 404;
-        throw error;
+        errorFn.errorCheck("No post found!", 404);
       }
 
       //Check Logged in user
       if (post.creator.toString() !== req.userId) {
-        const error = new Error("Not allowed to delete post");
-        error.statusCode = 403;
-        throw error;
+        errorFn.errorCheck("Not allowed to delete post", 403);
       }
       clearImage(post.imageUrl);
       return Post.findByIdAndRemove(postId);
@@ -203,9 +174,6 @@ exports.deletePost = (req, res, next) => {
         .json({ message: "Post deleted successfully", post: result });
     })
     .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
+      errorFn.errorHandler(err);
     });
 };
