@@ -3,9 +3,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
-const errorFn = require("../util/error");
+const { errorHandler, errorCheck } = require("../util/error");
 
-exports.signup = (req, res, next) => {
+exports.signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error(
@@ -20,58 +20,80 @@ exports.signup = (req, res, next) => {
   const name = req.body.name;
   const password = req.body.password;
 
-  bcrypt
-    .hash(password, 12)
-    .then((hashedPassword) => {
-      const user = new User({
-        email,
-        name,
-        password: hashedPassword,
-      });
-      return user.save();
-    })
-    .then((result) => {
-      res
-        .status(201)
-        .json({ message: "User created successfully", userId: result._id });
-    })
-    .catch((err) => {
-      errorFn.errorHandler(err, next);
+  try {
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = new User({
+      email,
+      name,
+      password: hashedPassword,
     });
+    const result = await user.save();
+    res
+      .status(201)
+      .json({ message: "User created successfully", userId: result._id });
+  } catch (err) {
+    errorHandler(err, next);
+  }
 };
 
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  let loadedUser;
+  try {
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      errorCheck("No such user with this email address was found!", 401);
+    }
+    const isEqual = await bcrypt.compare(password, user.password);
+    if (!isEqual) {
+      errorCheck("Wrong Password, try again!", 401);
+    }
 
-  User.findOne({ email: email })
-    .then((user) => {
-      if (!user) {
-        errorFn.errorCheck(
-          "No such user with this email address was found!",
-          401
-        );
-      }
-      loadedUser = user;
-      return bcrypt.compare(password, user.password);
-    })
-    .then((isEqual) => {
-      if (!isEqual) {
-        errorFn.errorCheck("Wrong Password, try again!", 401);
-      }
+    const token = jwt.sign(
+      {
+        email: user.email,
+        userId: user._id.toString(),
+      },
+      "somesuperlongsecretsecrets",
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({ token, userId: user._id.toString() });
+  } catch (err) {
+    errorHandler(err, next);
+  }
+};
 
-      const token = jwt.sign(
-        {
-          email: loadedUser.email,
-          userId: loadedUser._id.toString(),
-        },
-        "somesuperlongsecretsecrets",
-        { expiresIn: "1h" }
-      );
-      res.status(200).json({ token, userId: loadedUser._id.toString() });
-    })
-    .catch((err) => {
-      errorFn.errorHandler(err, next);
+exports.getStatus = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      status: user.status,
     });
+  } catch (err) {
+    errorHandler(err, next);
+  }
+};
+
+exports.updateStatus = async (req, res, next) => {
+  const { status: updatedStatus } = req.body;
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    user.status = updatedStatus;
+    await user.save();
+    res.status(200).json({
+      message: "User status updated!",
+    });
+  } catch (errorHandler) {
+    errorHandler(err, next);
+  }
 };

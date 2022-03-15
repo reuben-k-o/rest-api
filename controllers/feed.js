@@ -53,14 +53,13 @@ exports.createPost = async (req, res, next) => {
     const result = post.save();
     console.log(result);
     const user = await User.findById(req.userId);
-    creator = user;
     user.posts.push(post);
-    const resSave = await user.save();
+    await user.save();
 
     res.status(201).json({
       message: "Post created successfully",
       post: post,
-      creator: { _id: creator._id, name: creator.name },
+      creator: { _id: user._id, name: user.name },
     });
   } catch (err) {
     errorHelper.errorHandler(err, next);
@@ -142,7 +141,7 @@ exports.deletePost = async (req, res, next) => {
       errorHelper.errorCheck("Not allowed to delete post", 403);
     }
     clearImage(post.imageUrl);
-    const del = await Post.findByIdAndRemove(postId);
+    await Post.findByIdAndRemove(postId);
     const user = await User.findById(req.userId);
     user.posts.pull(postId);
     const result = await user.save();
