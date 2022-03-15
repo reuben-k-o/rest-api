@@ -1,4 +1,4 @@
-exports.errorHandler = (error) => {
+exports.errorHandler = (error, next) => {
   if (!error.statusCode) {
     error.statusCode = 500;
   }

@@ -36,7 +36,7 @@ exports.signup = (req, res, next) => {
         .json({ message: "User created successfully", userId: result._id });
     })
     .catch((err) => {
-      errorFn.errorHandler(err);
+      errorFn.errorHandler(err, next);
     });
 };
 
@@ -72,6 +72,6 @@ exports.login = (req, res, next) => {
       res.status(200).json({ token, userId: loadedUser._id.toString() });
     })
     .catch((err) => {
-      errorFn.errorHandler(err);
+      errorFn.errorHandler(err, next);
     });
 };

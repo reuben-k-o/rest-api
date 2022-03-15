@@ -22,7 +22,7 @@ exports.getPosts = async (req, res, next) => {
       totalItems,
     });
   } catch (err) {
-    errorFn.errorHandler(err);
+    errorFn.errorHandler(err, next);
   }
 };
 
@@ -62,7 +62,7 @@ exports.createPost = async (req, res, next) => {
       creator: { _id: creator._id, name: creator.name },
     });
   } catch (err) {
-    errorFn.errorHandler(err);
+    errorFn.errorHandler(err, next);
   }
 };
 
@@ -80,7 +80,7 @@ exports.getPost = (req, res, next) => {
         .json({ message: "Post fetched successfully", post: post });
     })
     .catch((err) => {
-      errorFn.errorHandler(err);
+      errorFn.errorHandler(err, next);
     });
 };
 
@@ -125,7 +125,7 @@ exports.updatePost = (req, res, next) => {
       });
     })
     .catch((err) => {
-      errorFn.errorHandler(err);
+      errorFn.errorHandler(err, next);
     });
 };
 
@@ -163,6 +163,6 @@ exports.deletePost = (req, res, next) => {
         .json({ message: "Post deleted successfully", post: result });
     })
     .catch((err) => {
-      errorFn.errorHandler(err);
+      errorFn.errorHandler(err, next);
     });
 };
