@@ -15,6 +15,7 @@ exports.getPosts = async (req, res, next) => {
     totalItems = await Post.find().countDocuments();
     const posts = await Post.find()
       .populate("creator")
+      .sort({ createdAt: -1 })
       .skip((currentPage - 1) * perPage)
       .limit(perPage);
 
@@ -103,7 +104,7 @@ exports.updatePost = async (req, res, next) => {
     errorHelper.errorCheck("No image picked", 422);
   }
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate("creator");
     if (!post) {
       errorHelper.errorCheck("No post found!", 404);
     }
@@ -111,7 +112,7 @@ exports.updatePost = async (req, res, next) => {
     if (imageUrl !== post.imageUrl) {
       clearImage(post.imageUrl);
     }
-    if (post.creator.toString() !== req.userId) {
+    if (post.creator._id.toString() !== req.userId) {
       errorHelper.errorCheck("Not authorized to update", 403);
     }
 
@@ -120,6 +121,7 @@ exports.updatePost = async (req, res, next) => {
     post.imageUrl = imageUrl;
 
     const resSave = await post.save();
+    io.getIO().emit("posts", { action: "update", post: resSave });
     res.status(200).json({
       message: "Post updated",
       post: resSave,
