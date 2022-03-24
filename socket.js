@@ -5,7 +5,7 @@ module.exports = {
     io = require("socket.io")(httpServer);
     return io;
   },
-  getIo: () => {
+  getIO: () => {
     if (!io) {
       throw new Error("Socket.io is not initialized");
     }
