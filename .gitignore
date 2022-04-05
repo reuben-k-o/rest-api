@@ -3,3 +3,4 @@ node_modules
 images
 config.js
 nodemon.json
+access.log
