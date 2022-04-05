@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require("uuid");
 
 const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
-const config = require("./config");
+// const config = require("./config");
 
 const app = express();
 
@@ -61,9 +61,9 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(config.MONGODB_URI)
+  .connect(process.env.MONGODB_URI)
   .then((result) => {
-    const server = app.listen(8080);
+    const server = app.listen(process.env.PORT || 8080);
     const io = require("./socket").init(server);
     io.on("connection", (socket) => {
       console.log("Client Connected");
